@@ -65,7 +65,7 @@ body {
   font-size: 1.2em;
   border-radius: 4px;
 }
-.endgame-container{
+.endgame-container {
   position: fixed;
   top: 0;
   left: 0;
@@ -93,6 +93,7 @@ body {
   height: 100%;
 }
 .time-progress {
+  z-index: 1;
   width: 60px;
   background: rgb(0, 0, 0);
   height: 100%;
@@ -109,16 +110,15 @@ body {
   transition: height 1000ms linear;
 }
 .text-container {
-  width: 100%;
-  padding: 1em;
   display: flex;
   flex-flow: column;
-  align-items: center;
   justify-content: center;
+  align-items: center;
+  width: 100%;
   box-sizing: border-box;
 }
 .text-item {
-  width: 100%;
+  display: flex;
   position: relative;
   margin-bottom: 1em;
   box-sizing: border-box;
@@ -131,10 +131,7 @@ body {
   top: 0;
   left: 0;
 }
-.text-item >  img {
-  width: 100%;
-}
+
 .text-item > .progress > img {
   height: 100%;
-  width: 100%;
 }
