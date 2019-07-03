@@ -55,10 +55,10 @@ const STARTING_PERCENT = 15;
 
 const CORRECT_ANSWER_PT = 10;
 const WRONG_ASNWER_PT = -2
-const LOSE_PROGRESS_PT = 0.05
+const LOSE_PROGRESS_PT = 0.0005
 
 const MAX_NOTE_MS = 1200;
-const MIN_NOTE_MS = 250;
+const MIN_NOTE_MS = 400;
 const LOSE_PROGRESS_MS = 50;
 const TIME_MS = 100;
 
@@ -238,7 +238,7 @@ function startNotifications(ms) {
     notificationsInterval = setInterval(() => {
         addDraggable(NOTE_CONTAINER_SELECTOR);
         if (currentNoteMS >= MIN_NOTE_MS) {
-            currentNoteMS -= 60
+            currentNoteMS -= 25
             startNotifications(currentNoteMS)
         }
     }, ms);
