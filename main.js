@@ -10,6 +10,7 @@ function dragMoveListener(event) {
         y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
 
     // translate the element
+    target.style.zIndex = 99;
     target.style.webkitTransform =
         target.style.transform =
         'translate(' + x + 'px, ' + y + 'px)';
@@ -45,16 +46,44 @@ interact('.draggable')
 document.addEventListener('mouseup', ({ target }) => {
     const item = notifications.find(item => item.el == target)
     if (item) {
-        item.el.dataset.x < item.startingPosition.x ? console.log('left') : console.log('right')
+        const isCollecting = item.el.dataset.x < item.startingPosition.x
+        const { word, quality } = item.el.dataset
+
+        if (isCollecting && quality == 'Good') bars[word].percent += 5
+        if (isCollecting && quality == 'Bad') bars[word].percent -= 5
+        if (!isCollecting && quality == 'Bad') bars[word].percent += 2
+
         item.el.style.opacity = 0;
         item.el.style.pointerEvents = 'none';
     }
 })
 
+
+const NOT_CONTAINER_SELECTOR = '.notification-container'
 const BARS_START_TRANSITION = 'width 500ms cubic-bezier(.61,.17,.52,1.22)'
 const BARS_NORMAL_TRANSITION = 'width 500ms'
+const STARTING_PERCENT = 15;
+
 const words = ['growth', 'esteem', 'belong', 'safety', 'energy']
 const notifications = [];
+const bars = getTextBars();
+let notificationsIntervar = 0;
+
+window.onload = () => {
+    restartGame();
+}
+function restartGame() {
+    clearNotContaier();
+    animateGameBars(100);
+    setTimeout(() => {
+        animateGameBars(STARTING_PERCENT);
+    }, 500);
+
+    clearInterval(notificationsIntervar);
+    notificationsIntervar = setInterval(() => {
+        addDraggable();
+    }, 1000);
+}
 
 function getTextBars() {
     return words.reduce((bars, word) => {
@@ -75,40 +104,27 @@ function getTextBars() {
     }, {})
 }
 
-function animateStartGameBars() {
+function animateGameBars(percent) {
     words.forEach(word => {
-        const elBar = bars[word].el
-        elBar.style.transition =
-            elBar.style.transitionDelay = '500ms'
-        elBar.style.width = `${startPercent}%`
+        bars[word].percent = percent;
     })
 }
 
-window.onload = () => {
-    const eles = Array.from(document.querySelectorAll('.progress'))
-
-    var startPercent = 10
-    eles.forEach(p => {
-        p.style.transition = 'width 500ms cubic-bezier(.61,.17,.52,1.22)'
-        p.style.transitionDelay = '500ms'
-        p.style.width = `${startPercent}%`
-    })
-}
 const imgSrcs = ['growthGood6.png', 'esteemBad1.png']
-setInterval(() => {
-    addDraggable();
-}, 1000);
+
+
 function addDraggable() {
-    const prefix = rand(10) > 5 ? 'Good' : 'Bad'
+    const prefix = rand(0, 10) > 3 ? 'Good' : 'Bad'
     const randPicNum = rand(1, words.length);
     const word = words[rand(0, words.length)]
     const picName = `assets/notifications/${word}/${word}${prefix}${randPicNum}.svg`
-    console.log('picName:', picName)
-    const [x, y] = [rand(100,1500), rand(100,700)]
+    const [x, y] = [rand(100, 1500), rand(100, 700)]
 
     const el = document.createElement('div')
     el.className = 'draggable'
     el.style.transform = `translate(${x}px, ${y}px)`
+    el.dataset.word = word;
+    el.dataset.quality = prefix;
     el.dataset.x = x;
     el.dataset.y = y;
     el.innerHTML = `<img src="${picName}" />`
@@ -119,5 +135,9 @@ function addDraggable() {
     }
 
     notifications.push(item)
-    document.querySelector('.container').appendChild(el)
+    document.querySelector(NOT_CONTAINER_SELECTOR).appendChild(el)
+}
+
+function clearNotContaier() {
+    document.querySelector(NOT_CONTAINER_SELECTOR).innerHTML = ''
 }
