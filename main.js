@@ -51,11 +51,11 @@ const NOTE_CONTAINER_SELECTOR = '.notification-container'
 const START_CONTAINER_SELECTOR = '.start-game-container'
 const BARS_START_TRANSITION = `width ${ANIMATION_MS}ms cubic-bezier(.61,.17,.52,1.22)`
 const LOSE_TRANSITION = `width ${LOSE_ANIMATION_MS}ms`
-const STARTING_PERCENT = 15;
+const BARS_START_PERCENT = 12;
 
 const CORRECT_ANSWER_PT = 10;
 const WRONG_ASNWER_PT = -2
-const LOSE_PROGRESS_PT = 0.0005
+const LOSE_PROGRESS_PT = 0.015
 
 const MAX_NOTE_MS = 1200;
 const MIN_NOTE_MS = 400;
@@ -191,10 +191,10 @@ function restartGame() {
 
     animateGameBars(100);
     setTimeout(() => {
-        animateGameBars(STARTING_PERCENT);
+        animateGameBars(BARS_START_PERCENT);
     }, ANIMATION_MS);
     setTimeout(() => {
-        startLoseProgress(STARTING_PERCENT);
+        startLoseProgress(BARS_START_PERCENT);
     }, ANIMATION_MS * 2);
 
     timer.percent = 100;
