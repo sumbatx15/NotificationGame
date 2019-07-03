@@ -53,7 +53,7 @@ const BARS_START_TRANSITION = `width ${ANIMATION_MS}ms cubic-bezier(.61,.17,.52,
 const LOSE_TRANSITION = `width ${LOSE_ANIMATION_MS}ms`
 const STARTING_PERCENT = 15;
 
-const CORRECT_ANSWER_PT = 5;
+const CORRECT_ANSWER_PT = 10;
 const WRONG_ASNWER_PT = -2
 const LOSE_PROGRESS_PT = 0.05
 
@@ -86,9 +86,18 @@ document.addEventListener('mouseup', ({ target }) => {
         const isCollecting = item.el.dataset.x < item.startingPosition.x
         const { word, quality } = item.el.dataset
 
-        if (isCollecting && quality == 'Good') bars[word].percent += CORRECT_ANSWER_PT
-        if (isCollecting && quality == 'Bad') bars[word].percent += WRONG_ASNWER_PT
-        if (!isCollecting && quality == 'Bad') bars[word].percent += 2
+        if (isCollecting && quality == 'Good') {
+            bars[word].percent += CORRECT_ANSWER_PT
+            sounds.barUpAudio.cloneNode().play()
+        }
+        if (isCollecting && quality == 'Bad') {
+            bars[word].percent += WRONG_ASNWER_PT
+            sounds.barDownAudio.cloneNode().play()
+        }
+        if (!isCollecting && quality == 'Bad') {
+            bars[word].percent += 2
+            sounds.trashAudio.cloneNode().play()
+        }
 
         item.el.style.opacity = 0;
         item.el.style.pointerEvents = 'none';
@@ -96,6 +105,7 @@ document.addEventListener('mouseup', ({ target }) => {
     if (target.dataset.name == "reset-btn") {
         target.style.opacity = 0;
         target.style.pointerEvents = 'none';
+        sounds.trashAudio.cloneNode().play()
         setTimeout(() => {
             restartGame();
         }, 500);
@@ -170,6 +180,7 @@ function getElEndGame() {
             <div class="draggable" data-name="reset-btn">
             <img src="${path}" alt="">
         </div>`
+
         }
     }
 }
@@ -197,7 +208,7 @@ function restartGame() {
 function startTime() {
     timeInterval = setInterval(() => {
         timer.percent -= (100 / 60)
-    }, 1000);
+    }, 500);
 }
 
 function getElTime() {
@@ -227,7 +238,7 @@ function startNotifications(ms) {
     notificationsInterval = setInterval(() => {
         addDraggable(NOTE_CONTAINER_SELECTOR);
         if (currentNoteMS >= MIN_NOTE_MS) {
-            currentNoteMS -= 20
+            currentNoteMS -= 60
             startNotifications(currentNoteMS)
         }
     }, ms);
@@ -267,6 +278,7 @@ function addDraggable(selector) {
 
     notifications.push(item)
     document.querySelector(selector).appendChild(el)
+    sounds[`${word}Audio`].cloneNode().play();
 }
 
 function clearNotContaier() {

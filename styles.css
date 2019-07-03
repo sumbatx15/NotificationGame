@@ -103,9 +103,8 @@ body {
   box-sizing: border-box;
 }
 .time-progress .bar {
-  width: 10px;
-  background: white;
-  border-radius: 50px;
+  width: 8.9px;
+  background: rgb(143, 143, 143);
   height: 100%;
   transition: height 1000ms linear;
 }
