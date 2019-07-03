@@ -110,6 +110,7 @@ body {
 }
 .text-container {
   width: 100%;
+  padding: 1em;
   display: flex;
   flex-flow: column;
   align-items: center;
@@ -117,6 +118,7 @@ body {
   box-sizing: border-box;
 }
 .text-item {
+  width: 100%;
   position: relative;
   margin-bottom: 1em;
   box-sizing: border-box;
@@ -129,6 +131,10 @@ body {
   top: 0;
   left: 0;
 }
+.text-item >  img {
+  width: 100%;
+}
 .text-item > .progress > img {
   height: 100%;
+  width: 100%;
 }
