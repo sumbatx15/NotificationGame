@@ -76,7 +76,7 @@ let currentNoteMS = MAX_NOTE_MS;
 window.onload = () => {
     elEndGame.hide();
     document.querySelector(START_CONTAINER_SELECTOR).style.display = 'none'
-    // restartGame();
+    restartGame();
 }
 
 document.addEventListener('mouseup', ({ target }) => {
