@@ -39,50 +39,82 @@ interact('.draggable')
         onmove: dragMoveListener,
         // call this function on every dragend event
         onend: function (event) {
-
+            const { target } = event
+            target.parentNode.removeChild(target)
         }
     });
 
+
+const ANIMATION_MS = 500;
+const LOSE_ANIMATION_MS = 200;
+const NOTE_CONTAINER_SELECTOR = '.notification-container'
+const START_CONTAINER_SELECTOR = '.start-game-container'
+const BARS_START_TRANSITION = `width ${ANIMATION_MS}ms cubic-bezier(.61,.17,.52,1.22)`
+const LOSE_TRANSITION = `width ${LOSE_ANIMATION_MS}ms`
+const STARTING_PERCENT = 15;
+
+const CORRECT_ANSWER_PT = 5;
+const WRONG_ASNWER_PT = -2
+const LOSE_PROGRESS_PT = 0.05
+
+const MAX_NOTE_MS = 1200;
+const MIN_NOTE_MS = 250;
+const LOSE_PROGRESS_MS = 50;
+const TIME_MS = 100;
+
+const words = ['growth', 'esteem', 'belong', 'safety', 'energy']
+const notifications = [];
+const bars = getTextBars();
+const timer = getElTime();
+const elEndGame = getElEndGame();
+
+let timeInterval = 0
+let loseProgressInterval = 0;
+let notificationsInterval = 0;
+let currentNoteMS = MAX_NOTE_MS;
+
+window.onload = () => {
+    elEndGame.hide();
+    document.querySelector(START_CONTAINER_SELECTOR).style.display = 'none'
+    restartGame();
+}
+
 document.addEventListener('mouseup', ({ target }) => {
+
     const item = notifications.find(item => item.el == target)
     if (item) {
         const isCollecting = item.el.dataset.x < item.startingPosition.x
         const { word, quality } = item.el.dataset
 
-        if (isCollecting && quality == 'Good') bars[word].percent += 5
-        if (isCollecting && quality == 'Bad') bars[word].percent -= 5
+        if (isCollecting && quality == 'Good') bars[word].percent += CORRECT_ANSWER_PT
+        if (isCollecting && quality == 'Bad') bars[word].percent += WRONG_ASNWER_PT
         if (!isCollecting && quality == 'Bad') bars[word].percent += 2
 
         item.el.style.opacity = 0;
         item.el.style.pointerEvents = 'none';
     }
+    if (target.dataset.name == "reset-btn") {
+        target.style.opacity = 0;
+        target.style.pointerEvents = 'none';
+        setTimeout(() => {
+            restartGame();
+        }, 500);
+    }
 })
+function endGame() {
 
-
-const NOT_CONTAINER_SELECTOR = '.notification-container'
-const BARS_START_TRANSITION = 'width 500ms cubic-bezier(.61,.17,.52,1.22)'
-const BARS_NORMAL_TRANSITION = 'width 500ms'
-const STARTING_PERCENT = 15;
-
-const words = ['growth', 'esteem', 'belong', 'safety', 'energy']
-const notifications = [];
-const bars = getTextBars();
-let notificationsIntervar = 0;
-
-window.onload = () => {
-    restartGame();
-}
-function restartGame() {
-    clearNotContaier();
-    animateGameBars(100);
+    elEndGame.show();
     setTimeout(() => {
-        animateGameBars(STARTING_PERCENT);
+        animateGameBars(100)
     }, 500);
+    clearInterval(timeInterval);
+    clearInterval(loseProgressInterval);
+    clearInterval(notificationsInterval);
 
-    clearInterval(notificationsIntervar);
-    notificationsIntervar = setInterval(() => {
-        addDraggable();
-    }, 1000);
+    let isWinner = true;
+    words.forEach(word => {
+        if (bars[word].percent <= 0) isWinner = false;
+    })
 }
 
 function getTextBars() {
@@ -90,34 +122,133 @@ function getTextBars() {
         bars[word] = {
             el: document.querySelector(`#${word}-bar`),
             _percent: 100,
-            isStarting: true,
+            _isStarting: false,
+            set isStarting(val) {
+                this._isStarting = val
+                setInterval(() => {
+                    this._isStarting = false
+                }, ANIMATION_MS);
+            },
+            isGainingPoints: false,
             get percent() {
                 return this._percent;
             },
             set percent(percent) {
+                if (this.isGainingPoints) return;
                 this._percent = percent
-                this.el.style.transition = this.isStarting ? BARS_START_TRANSITION : BARS_NORMAL_TRANSITION;
-                this.el.style.width = `${percent}%`
+                if (this._percent <= 0) endGame();
+                this.el.style.transition = this._isStarting || this.isGainingPoints ? BARS_START_TRANSITION : LOSE_TRANSITION
+                this.el.style.width = `${this._percent}%`
+            },
+            gainingPoints() {
+                this.isGainingPoints = true
+                this.el.style.transition = BARS_START_TRANSITION;
+                setTimeout(() => {
+                    this.isGainingPoints = false
+                }, ANIMATION_MS);
             }
         }
         return bars;
     }, {})
 }
 
+function getElEndGame() {
+    return {
+        el: document.querySelector('.endgame-container'),
+        show() {
+            this.el.style.opacity = 1
+            this.el.style.pointerEvents = 'all'
+            this.renderInnerHTML();
+        },
+        hide() {
+            this.el.style.opacity = 0
+            this.el.style.pointerEvents = 'none'
+        },
+        renderInnerHTML() {
+            const { path } = getRandPicPath();
+            this.el.innerHTML = `
+            <div class="draggable" data-name="reset-btn">
+            <img src="${path}" alt="">
+        </div>`
+        }
+    }
+}
+
+function restartGame() {
+    elEndGame.hide();
+    clearNotContaier();
+
+    animateGameBars(100);
+    setTimeout(() => {
+        animateGameBars(STARTING_PERCENT);
+    }, ANIMATION_MS);
+    setTimeout(() => {
+        startLoseProgress(STARTING_PERCENT);
+    }, ANIMATION_MS * 2);
+
+    timer.percent = 100;
+    setTimeout(() => {
+        startTime();
+    }, ANIMATION_MS * 2);
+    currentNoteMS = MAX_NOTE_MS;
+    startNotifications(currentNoteMS);
+}
+
+function startTime() {
+    timeInterval = setInterval(() => {
+        timer.percent -= (100 / 60)
+    }, 1000);
+}
+
+function getElTime() {
+    return {
+        el: document.querySelector('.time-progress>.bar'),
+        _percent: 100,
+        get percent() {
+            return this._percent;
+        },
+        set percent(percent) {
+            this._percent = percent
+            if (this._percent <= 0) endGame();
+            this.el.style.height = `${this._percent}%`
+        },
+    }
+}
+function startLoseProgress() {
+    loseProgressInterval = setInterval(() => {
+        words.forEach(word => {
+            bars[word].percent -= LOSE_PROGRESS_PT
+        })
+    }, LOSE_PROGRESS_MS);
+}
+
+function startNotifications(ms) {
+    clearInterval(notificationsInterval);
+    notificationsInterval = setInterval(() => {
+        addDraggable(NOTE_CONTAINER_SELECTOR);
+        if (currentNoteMS >= MIN_NOTE_MS) {
+            currentNoteMS -= 20
+            startNotifications(currentNoteMS)
+        }
+    }, ms);
+}
+
 function animateGameBars(percent) {
     words.forEach(word => {
+        bars[word].isStarting = true;
         bars[word].percent = percent;
     })
 }
-
-const imgSrcs = ['growthGood6.png', 'esteemBad1.png']
-
-
-function addDraggable() {
+function getRandPicPath() {
     const prefix = rand(0, 10) > 3 ? 'Good' : 'Bad'
     const randPicNum = rand(1, words.length);
     const word = words[rand(0, words.length)]
-    const picName = `assets/notifications/${word}/${word}${prefix}${randPicNum}.svg`
+    const path = `assets/notifications/${word}/${word}${prefix}${randPicNum}.svg`
+    return { path, word, prefix }
+}
+
+function addDraggable(selector) {
+    const { path, word, prefix } = getRandPicPath();
     const [x, y] = [rand(100, 1500), rand(100, 700)]
 
     const el = document.createElement('div')
@@ -127,7 +258,7 @@ function addDraggable() {
     el.dataset.quality = prefix;
     el.dataset.x = x;
     el.dataset.y = y;
-    el.innerHTML = `<img src="${picName}" />`
+    el.innerHTML = `<img src="${path}" />`
 
     const item = {
         startingPosition: { x, y },
@@ -135,9 +266,9 @@ function addDraggable() {
     }
 
     notifications.push(item)
-    document.querySelector(NOT_CONTAINER_SELECTOR).appendChild(el)
+    document.querySelector(selector).appendChild(el)
 }
 
 function clearNotContaier() {
-    document.querySelector(NOT_CONTAINER_SELECTOR).innerHTML = ''
+    document.querySelector(NOTE_CONTAINER_SELECTOR).innerHTML = ''
 }

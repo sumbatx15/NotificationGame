@@ -12,6 +12,14 @@
 </head>
 
 <body>
+    <div class="start-game-container">
+        <button onclick="restartGame()">Start</button>
+    </div>
+    <div class="endgame-container">
+        <div class="draggable" data-name="reset-btn">
+            <img src="assets/notifications/energy/energyGood2.svg" alt="">
+        </div>
+    </div>
     <div class="notification-container">
     </div>
     <div class="game-container">
@@ -24,32 +32,34 @@
                 <div id="growth-bar" class="progress">
                     <img src="assets/filled/growthFull.svg" alt="">
                 </div>
-                <div class="text-item">
-                    <img src="assets/stroked/esteemBar.svg" alt="">
-                    <div id="esteem-bar" class="progress">
-                        <img src="assets/filled/esteemFull.svg" alt="">
-                    </div>
+            </div>
+            <div class="text-item">
+                <img src="assets/stroked/esteemBar.svg" alt="">
+                <div id="esteem-bar" class="progress">
+                    <img src="assets/filled/esteemFull.svg" alt="">
                 </div>
-                <div class="text-item">
-                    <img src="assets/stroked/belongBar.svg" alt="">
-                    <div id="belong-bar" class="progress">
-                        <img src="assets/filled/belongFull.svg" alt="">
-                    </div>
+            </div>
+            <div class="text-item">
+                <img src="assets/stroked/belongBar.svg" alt="">
+                <div id="belong-bar" class="progress">
+                    <img src="assets/filled/belongFull.svg" alt="">
                 </div>
-                <div class="text-item">
-                    <img src="assets/stroked/safetyBar.svg" alt="">
-                    <div id="safety-bar" class="progress">
-                        <img src="assets/filled/safetyFull.svg" alt="">
-                    </div>
+            </div>
+            <div class="text-item">
+                <img src="assets/stroked/safetyBar.svg" alt="">
+                <div id="safety-bar" class="progress">
+                    <img src="assets/filled/safetyFull.svg" alt="">
                 </div>
-                <div class="text-item">
-                    <img src="assets/stroked/energyBar.svg" alt="">
-                    <div id="energy-bar" class="progress">
-                        <img src="assets/filled/energyFull.svg" alt="">
-                    </div>
+            </div>
+            <div class="text-item">
+                <img src="assets/stroked/energyBar.svg" alt="">
+                <div id="energy-bar" class="progress">
+                    <img src="assets/filled/energyFull.svg" alt="">
                 </div>
             </div>
         </div>
+    </div>
+    </div>
     </div>
     <script src="main.js"></script>
 </body>
