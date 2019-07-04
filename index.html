@@ -9,11 +9,22 @@
     <script src="https://unpkg.com/interactjs/dist/interact.min.js"></script>
     <link href="https://fonts.googleapis.com/css?family=Fredoka+One|Rubik+Mono+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+
 </head>
 
 <body>
-    <div class="start-game-container">
-        <button onclick="restartGame()">Start</button>
+    <div id="videos">
+        
+    </div>
+    <script src="utils/render-videos.js"></script>
+    <canvas width="720" height="810" id="buffer"></canvas>
+    <canvas width="720" height="405" id="output"></canvas>
+
+    <div class="intro" onclick="handleIntroClick(this)">
+        <video src="assets/screens/intro.mp4" autoplay loop></video>
+    </div>
+    <div class="tutorial">
+        <video src="assets/screens/tutorial.mp4"></video>
     </div>
     <div class="endgame-container">
         <div class="draggable" data-name="reset-btn">
@@ -59,6 +70,7 @@
             </div>
         </div>
     </div>
+    <script src="utils/video-alpha-proccessor.js"></script>
     <script src="assets/sounds/index.js"></script>
     <script src="main.js"></script>
 </body>

@@ -19,25 +19,12 @@ function dragMoveListener(event) {
     target.setAttribute('data-x', x);
     target.setAttribute('data-y', y);
 }
-window.dragMoveListener = dragMoveListener;
+// window.dragMoveListener = dragMoveListener;
 interact('.draggable')
     .draggable({
-        // enable inertial throwing
         inertia: true,
-        // keep the element within the area of it's parent
-        // modifiers: [
-        //     interact.modifiers.restrict({
-        //         restriction: "parent",
-        //         endOnly: true,
-        //         elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
-        //     }),
-        // ],
-        // enable autoScroll
         autoScroll: true,
-
-        // call this function on every dragmove event
         onmove: dragMoveListener,
-        // call this function on every dragend event
         onend: function (event) {
             const { target } = event
             target.parentNode.removeChild(target)
@@ -62,11 +49,13 @@ const MIN_NOTE_MS = 400;
 const LOSE_PROGRESS_MS = 50;
 const TIME_MS = 100;
 
+const frameProcessor = initFrameProcess();
 const words = ['growth', 'esteem', 'belong', 'safety', 'energy']
 const notifications = [];
 const bars = getTextBars();
 const timer = getElTime();
 const elEndGame = getElEndGame();
+const feedbacks = getFeedbacks();
 
 let timeInterval = 0
 let loseProgressInterval = 0;
@@ -75,12 +64,78 @@ let currentNoteMS = MAX_NOTE_MS;
 
 window.onload = () => {
     elEndGame.hide();
-    document.querySelector(START_CONTAINER_SELECTOR).style.display = 'none'
-    restartGame();
+    // restartGame();
+}
+function getFeedbackVideos(word) {
+    const videos = []
+    for (let i = 1; i < 4; i++) {
+        videos.push(document.querySelector(`#${word + i}`))
+    }
+    return videos
+}
+
+function isAnyFeedbackPlaying() {
+    return words.reduce((isPlaying, word) => {
+        if (feedbacks[word].isPlaying) {
+            isPlaying = feedbacks[word].isPlaying
+        }
+        return isPlaying
+    }, false)
+}
+
+function getFeedbacks() {
+    return words.reduce((feedbacks, word) => {
+        feedbacks[word] = {
+            videos: getFeedbackVideos(word),
+            canvas: document.querySelector('#output'),
+            selectedVideo: null,
+            isPlaying: false,
+            get randVideo() {
+                return this.videos[rand(0, 3)]
+            },
+            show(show = true) {
+                this.canvas.style.width = show ? '720px' : '0px'
+            },
+            play(play = true) {
+                if (play) {
+                    this.show();
+                    this.clearSelected();
+                    this.selectedVideo = this.randVideo;
+                    frameProcessor.startProcess(this.selectedVideo)
+                    this.selectedVideo.currentTime = 0
+                    this.selectedVideo.play()
+                    this.isPlaying = true;
+                    frameProcessor.startProcess(this.selectedVideo)
+                } else {
+                    this.clearSelected();
+                }
+            },
+            clearSelected() {
+                if (!this.selectedVideo) return;
+                this.selectedVideo.currentTime = 0
+                this.selectedVideo.play()
+                this.selectedVideo.pause()
+                frameProcessor.endProcess()
+                this.isPlaying = false;
+                this.selectedVideo = null;
+            }
+        }
+        feedbacks[word].videos.forEach(v => {
+            v.addEventListener('timeupdate', () => {
+                const { selectedVideo } = feedbacks[word]
+                const percent = 100 / selectedVideo.duration * selectedVideo.currentTime
+                if (percent > 70) feedbacks[word].show(false)
+            })
+            v.addEventListener('ended', () => {
+                feedbacks[word].play(false)
+            })
+        })
+
+        return feedbacks
+    }, {})
 }
 
 document.addEventListener('mouseup', ({ target }) => {
-
     const item = notifications.find(item => item.el == target)
     if (item) {
         const isCollecting = item.el.dataset.x < item.startingPosition.x
@@ -102,7 +157,8 @@ document.addEventListener('mouseup', ({ target }) => {
         item.el.style.opacity = 0;
         item.el.style.pointerEvents = 'none';
     }
-    if (target.dataset.name == "reset-btn") {
+
+    if (target.dataset.name == 'reset-btn') {
         target.style.opacity = 0;
         target.style.pointerEvents = 'none';
         sounds.trashAudio.cloneNode().play()
@@ -111,8 +167,22 @@ document.addEventListener('mouseup', ({ target }) => {
         }, 500);
     }
 })
-function endGame() {
 
+function handleIntroClick(element) {
+    element.children[0].pause()
+    element.style.opacity = 0
+    element.style.pointerEvents = 'none'
+
+    const elTutorial = document.querySelector('.tutorial')
+    // elTutorial.children[0].play()
+    setTimeout(() => {
+        elTutorial.style.height = 0;
+        elTutorial.style.width = 0;
+        elTutorial.style.borderRadius = '1000px';
+        restartGame();
+    }, 0);
+}
+function endGame() {
     elEndGame.show();
     setTimeout(() => {
         animateGameBars(100)
@@ -126,11 +196,16 @@ function endGame() {
         if (bars[word].percent <= 0) isWinner = false;
     })
 }
-
+function barUp(word) {
+    console.log('barUp')
+    if (isAnyFeedbackPlaying()) return
+    feedbacks[word].play();
+}
 function getTextBars() {
     return words.reduce((bars, word) => {
         bars[word] = {
             el: document.querySelector(`#${word}-bar`),
+            max: BARS_START_PERCENT,
             _percent: 100,
             _isStarting: false,
             set isStarting(val) {
@@ -146,9 +221,17 @@ function getTextBars() {
             set percent(percent) {
                 if (this.isGainingPoints) return;
                 this._percent = percent
+                this.calcMax();
                 if (this._percent <= 0) endGame();
                 this.el.style.transition = this._isStarting || this.isGainingPoints ? BARS_START_TRANSITION : LOSE_TRANSITION
                 this.el.style.width = `${this._percent}%`
+            },
+            calcMax() {
+                console.log(' this.max:', this.max)
+                if (this.percent != 100 && this.percent > this.max + 12) {
+                    this.max = this.percent;
+                    barUp(word)
+                }
             },
             gainingPoints() {
                 this.isGainingPoints = true
@@ -208,7 +291,7 @@ function restartGame() {
 function startTime() {
     timeInterval = setInterval(() => {
         timer.percent -= (100 / 60)
-    }, 500);
+    }, 1000);
 }
 
 function getElTime() {
@@ -236,7 +319,7 @@ function startLoseProgress() {
 function startNotifications(ms) {
     clearInterval(notificationsInterval);
     notificationsInterval = setInterval(() => {
-        addDraggable(NOTE_CONTAINER_SELECTOR);
+        addNotification(NOTE_CONTAINER_SELECTOR);
         if (currentNoteMS >= MIN_NOTE_MS) {
             currentNoteMS -= 25
             startNotifications(currentNoteMS)
@@ -258,7 +341,7 @@ function getRandPicPath() {
     return { path, word, prefix }
 }
 
-function addDraggable(selector) {
+function addNotification(selector) {
     const { path, word, prefix } = getRandPicPath();
     const [x, y] = [rand(100, 1500), rand(100, 700)]
 
