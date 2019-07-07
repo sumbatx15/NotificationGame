@@ -31,13 +31,6 @@ interact('.draggable')
         }
     });
 
-function createGif() {
-    document.querySelector(NOTE_CONTAINER_SELECTOR).innerHTML += `
-        <img src="assets/gif.gif" width="900" />
-    `
-}
-
-
 const ANIMATION_MS = 500;
 const LOSE_ANIMATION_MS = 200;
 const FEEDBACK_CONTAINER = '#feedback-container'
@@ -45,9 +38,9 @@ const NOTE_CONTAINER_SELECTOR = '.notification-container'
 const START_CONTAINER_SELECTOR = '.start-game-container'
 const BARS_START_TRANSITION = `width ${ANIMATION_MS}ms cubic-bezier(0.61,0.17,0.52,1.22)`
 const LOSE_TRANSITION = `width ${LOSE_ANIMATION_MS}ms`
-const BARS_START_PERCENT = 12;
+const BARS_START_PERCENT = 70;
 
-const CORRECT_ANSWER_PT = 10;
+const CORRECT_ANSWER_PT = 30;
 const WRONG_ASNWER_PT = -2
 const LOSE_PROGRESS_PT = 0.025
 
@@ -124,12 +117,13 @@ function getFeedbackVideos(word) {
 }
 
 
-function createFeedbackElement(path, onload) {
+function createFeedbackElement(path, { x, y }, onload, ) {
     const img = document.createElement('img')
     img.className = 'feedback';
-    img.setAttribute('width', '300px')
-    img.style.top = rand(0, 80) + '%'
-    img.style.left = rand(0, 70) + '%'
+    img.setAttribute('width', '450px')
+    img.style.top = y + 'px';
+    img.style.left = x + 'px';
+    img.style.transform = 'translate(-50%,-50%)';
     img.style.pointerEvents = 'none'
     img.src = `${path}?a=${new Date()}`
     img.onload = onload;
@@ -149,10 +143,10 @@ function getFeedbacks() {
             show(show = true) {
                 this.canvas.style.width = show ? '900px' : '0px'
             },
-            play() {
+            play({ x, y }) {
                 this.selectedVideo = this.randVideo();
                 const video = this.selectedVideo
-                const gif = createFeedbackElement(video.gifSrc, () => {
+                const gif = createFeedbackElement(video.gifSrc, { x, y }, () => {
                     video.audio.onended = () => {
                         this.elContainer.removeChild(gif)
                         this.isPlaying = false;
@@ -196,6 +190,7 @@ function mouseUp({ target }) {
         const { word, quality } = item.el.dataset
 
         if (isCollecting && quality == 'Good') {
+            bars[word].notification = item;
             bars[word].percent += CORRECT_ANSWER_PT
             sounds.barUpAudio.cloneNode().play()
         }
@@ -204,6 +199,7 @@ function mouseUp({ target }) {
             sounds.barDownAudio.cloneNode().play()
         }
         else if (!isCollecting && quality == 'Bad') {
+            bars[word].notification = item;
             bars[word].percent += 2
             sounds.trashAudio.cloneNode().play()
         }
@@ -225,15 +221,15 @@ function collectAllNotes() {
     const { children } = document.querySelector(NOTE_CONTAINER_SELECTOR);
     Array.from(children).forEach((note, i) => {
         const { y, x, } = note.dataset
-        setTimeout(() => {
-            note.style.pointerEvents = `none`
-            note.style.transition = `all 1000ms`
-            note.style.transform = `translate(${x - 200}px,${y}px)`;
-            note.style.opacity = 0
-        }, i * 100);
+        note.style.pointerEvents = `none`
+        note.style.transition = `all 1000ms`
+        note.style.transform = `translate(${x - 300}px,${y}px)`;
+        note.style.opacity = 0
     })
     return children.length
 }
+
+
 function endGame(isWon) {
     if (isGameEnded) return
     isGameEnded = true;
@@ -243,12 +239,10 @@ function endGame(isWon) {
 
     if (isWon) {
         let childLength = collectAllNotes();
-        setTimeout(() => {
-            resetBarsWithAnimation(100, 100)
-        }, childLength * 100);
+        resetBarsWithAnimation(100, 100)
         setTimeout(() => {
             elEndGame.show(isWon)
-        }, (childLength * 100) + 1000);
+        }, 1000);
     } else {
         elEndGame.show()
         setTimeout(() => {
@@ -258,12 +252,11 @@ function endGame(isWon) {
 
 
 }
-function barUp(word) {
-    feedbacks[word].play();
-}
+
 function getTextBars() {
     return words.reduce((bars, word) => {
         bars[word] = {
+            notification: null,
             el: document.querySelector(`#${word}-bar`),
             max: BARS_START_PERCENT,
             _percent: 100,
@@ -291,9 +284,11 @@ function getTextBars() {
             },
 
             calcMax() {
-                if (this.percent != 100 && this.percent > this.max + 25) {
+
+                if (this.percent != 100 && this.percent > this.max + 12) {
+                    const { x, y } = this.notification.startingPosition
                     this.max = this.percent;
-                    barUp(word)
+                    feedbacks[word].play({ x, y });
                 }
             },
             gainingPoints() {
