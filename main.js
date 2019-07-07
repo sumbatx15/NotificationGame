@@ -38,10 +38,10 @@ const NOTE_CONTAINER_SELECTOR = '.notification-container'
 const START_CONTAINER_SELECTOR = '.start-game-container'
 const BARS_START_TRANSITION = `width ${ANIMATION_MS}ms cubic-bezier(0.61,0.17,0.52,1.22)`
 const LOSE_TRANSITION = `width ${LOSE_ANIMATION_MS}ms`
-const BARS_START_PERCENT = 70;
+const BARS_START_PERCENT = 12;
 
-const CORRECT_ANSWER_PT = 30;
-const WRONG_ASNWER_PT = -2
+const CORRECT_ANSWER_PT = 10;
+const WRONG_ASNWER_PT = -5
 const LOSE_PROGRESS_PT = 0.025
 
 const MAX_NOTE_MS = 1000;
@@ -285,7 +285,7 @@ function getTextBars() {
 
             calcMax() {
 
-                if (this.percent != 100 && this.percent > this.max + 12) {
+                if (this.percent != 100 && this.percent > this.max + 25) {
                     const { x, y } = this.notification.startingPosition
                     this.max = this.percent;
                     feedbacks[word].play({ x, y });
