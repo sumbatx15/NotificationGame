@@ -16,9 +16,12 @@
     <div id="videos">
         
     </div>
+    <script src="utils/video-alpha-proccessor.js"></script>
     <script src="utils/render-videos.js"></script>
-    <canvas width="720" height="810" id="buffer"></canvas>
-    <canvas width="720" height="405" id="output"></canvas>
+    <!-- <canvas class="buffer" width="1920" height="2160" id="buffer"></canvas>
+    <canvas class="output" width="1920" height="1080" id="output"></canvas> -->
+    <!-- <canvas width="720" height="810" id="buffer"></canvas>
+    <canvas width="720" height="405" id="output"></canvas> -->
 
     <div class="intro" onclick="handleIntroClick(this)">
         <video src="assets/screens/intro.mp4" autoplay loop></video>
@@ -34,43 +37,39 @@
     <div class="notification-container">
     </div>
     <div class="game-container">
-        <div class="time-progress">
-            <div class="bar"></div>
-        </div>
         <div class="text-container">
             <div class="text-item">
-                <img src="assets/stroked/growthBar.svg" alt="">
-                <div id="growth-bar" class="progress">
-                    <img src="assets/filled/growthFull.svg" alt="">
+                <img class="text-stroked" src="assets/stroked/growthBar.svg" alt="">
+                <div id="growth-bar" class="text-bar-container">
+                    <img class="text-bar" src="assets/filled/growthFull.svg" alt="">
                 </div>
             </div>
             <div class="text-item">
-                <img src="assets/stroked/esteemBar.svg" alt="">
-                <div id="esteem-bar" class="progress">
-                    <img src="assets/filled/esteemFull.svg" alt="">
+                <img class="text-stroked" src="assets/stroked/esteemBar.svg" alt="">
+                <div id="esteem-bar" class="text-bar-container">
+                    <img class="text-bar" src="assets/filled/esteemFull.svg" alt="">
                 </div>
             </div>
             <div class="text-item">
-                <img src="assets/stroked/belongBar.svg" alt="">
-                <div id="belong-bar" class="progress">
-                    <img src="assets/filled/belongFull.svg" alt="">
+                <img class="text-stroked" src="assets/stroked/belongBar.svg" alt="">
+                <div id="belong-bar" class="text-bar-container">
+                    <img class="text-bar" src="assets/filled/belongFull.svg" alt="">
                 </div>
             </div>
             <div class="text-item">
-                <img src="assets/stroked/safetyBar.svg" alt="">
-                <div id="safety-bar" class="progress">
-                    <img src="assets/filled/safetyFull.svg" alt="">
+                <img class="text-stroked" src="assets/stroked/safetyBar.svg" alt="">
+                <div id="safety-bar" class="text-bar-container">
+                    <img class="text-bar" src="assets/filled/safetyFull.svg" alt="">
                 </div>
             </div>
             <div class="text-item">
-                <img src="assets/stroked/energyBar.svg" alt="">
-                <div id="energy-bar" class="progress">
-                    <img src="assets/filled/energyFull.svg" alt="">
+                <img class="text-stroked" src="assets/stroked/energyBar.svg" alt="">
+                <div id="energy-bar" class="text-bar-container">
+                    <img class="text-bar" src="assets/filled/energyFull.svg" alt="">
                 </div>
             </div>
         </div>
     </div>
-    <script src="utils/video-alpha-proccessor.js"></script>
     <script src="assets/sounds/index.js"></script>
     <script src="main.js"></script>
 </body>

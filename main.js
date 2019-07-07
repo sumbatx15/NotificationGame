@@ -31,25 +31,28 @@ interact('.draggable')
         }
     });
 
-
+function createGif() {
+    document.querySelector(NOTE_CONTAINER_SELECTOR).innerHTML += `
+        <img src="assets/gif.gif" width="900" />
+    `
+}
 const ANIMATION_MS = 500;
 const LOSE_ANIMATION_MS = 200;
 const NOTE_CONTAINER_SELECTOR = '.notification-container'
 const START_CONTAINER_SELECTOR = '.start-game-container'
 const BARS_START_TRANSITION = `width ${ANIMATION_MS}ms cubic-bezier(.61,.17,.52,1.22)`
 const LOSE_TRANSITION = `width ${LOSE_ANIMATION_MS}ms`
-const BARS_START_PERCENT = 12;
+const BARS_START_PERCENT = 35;
 
 const CORRECT_ANSWER_PT = 10;
 const WRONG_ASNWER_PT = -2
 const LOSE_PROGRESS_PT = 0.025
 
-const MAX_NOTE_MS = 1200;
+const MAX_NOTE_MS = 500;
 const MIN_NOTE_MS = 400;
 const LOSE_PROGRESS_MS = 50;
 const TIME_MS = 100;
 
-const frameProcessor = initFrameProcess();
 const words = ['growth', 'esteem', 'belong', 'safety', 'energy']
 const notifications = [];
 const bars = getTextBars();
@@ -69,43 +72,46 @@ window.onload = () => {
 function getFeedbackVideos(word) {
     const videos = []
     for (let i = 1; i < 4; i++) {
-        videos.push(document.querySelector(`#${word + i}`))
+        const video = document.querySelector(`#${word + i}`);
+        video.volume = 0.3
+        videos.push(video)
     }
     return videos
 }
 
-function isAnyFeedbackPlaying() {
-    return words.reduce((isPlaying, word) => {
-        if (feedbacks[word].isPlaying) {
-            isPlaying = feedbacks[word].isPlaying
-        }
-        return isPlaying
-    }, false)
-}
+// function isAnyFeedbackPlaying() {
+//     return words.reduce((isPlaying, word) => {
+//         if (feedbacks[word].isPlaying) {
+//             isPlaying = feedbacks[word].isPlaying
+//         }
+//         return isPlaying
+//     }, false)
+// }
 
 function getFeedbacks() {
     return words.reduce((feedbacks, word) => {
         feedbacks[word] = {
             videos: getFeedbackVideos(word),
-            canvas: document.querySelector('#output'),
+            canvas: document.querySelector(`#${word}-output`),
             selectedVideo: null,
             isPlaying: false,
-            get randVideo() {
-                return this.videos[rand(0, 3)]
+            frameProcessor: initFrameProcess(`#${word}-output`, `#${word}-buffer`),
+            randVideo() {
+                return this.videos[rand(0, 3)]// 
             },
             show(show = true) {
-                this.canvas.style.width = show ? '720px' : '0px'
+                this.canvas.style.width = show ? '900px' : '0px'
             },
             play(play = true) {
                 if (play) {
                     this.show();
                     this.clearSelected();
-                    this.selectedVideo = this.randVideo;
-                    frameProcessor.startProcess(this.selectedVideo)
+                    this.selectedVideo = this.randVideo();
+                    this.frameProcessor.startProcess(this.selectedVideo)
                     this.selectedVideo.currentTime = 0
                     this.selectedVideo.play()
                     this.isPlaying = true;
-                    frameProcessor.startProcess(this.selectedVideo)
+                    this.frameProcessor.startProcess(this.selectedVideo)
                 } else {
                     this.clearSelected();
                 }
@@ -115,7 +121,7 @@ function getFeedbacks() {
                 this.selectedVideo.currentTime = 0
                 this.selectedVideo.play()
                 this.selectedVideo.pause()
-                frameProcessor.endProcess()
+                this.frameProcessor.endProcess()
                 this.isPlaying = false;
                 this.selectedVideo = null;
             }
@@ -136,6 +142,7 @@ function getFeedbacks() {
 }
 
 document.addEventListener('mouseup', ({ target }) => {
+    console.log('target:', target.tagName)
     const item = notifications.find(item => item.el == target)
     if (item) {
         const isCollecting = item.el.dataset.x < item.startingPosition.x
@@ -179,13 +186,13 @@ function handleIntroClick(element) {
         elTutorial.style.height = 0;
         elTutorial.style.width = 0;
         elTutorial.style.borderRadius = '1000px';
-        restartGame();
+        // restartGame();
     }, 0);
 }
 function endGame() {
     elEndGame.show();
     setTimeout(() => {
-        animateGameBars(100)
+        resetBarsWithAnimation(100)
     }, 500);
     clearInterval(timeInterval);
     clearInterval(loseProgressInterval);
@@ -197,9 +204,7 @@ function endGame() {
     })
 }
 function barUp(word) {
-    console.log('barUp')
-    if (isAnyFeedbackPlaying()) return
-    feedbacks[word].play();
+    // feedbacks[word].play();
 }
 function getTextBars() {
     return words.reduce((bars, word) => {
@@ -227,7 +232,6 @@ function getTextBars() {
                 this.el.style.width = `${this._percent}%`
             },
             calcMax() {
-                console.log(' this.max:', this.max)
                 if (this.percent != 100 && this.percent > this.max + 12) {
                     this.max = this.percent;
                     barUp(word)
@@ -272,9 +276,8 @@ function restartGame() {
     elEndGame.hide();
     clearNotContaier();
 
-    animateGameBars(100);
     setTimeout(() => {
-        animateGameBars(BARS_START_PERCENT);
+        resetBarsWithAnimation(BARS_START_PERCENT);
     }, ANIMATION_MS);
     setTimeout(() => {
         startLoseProgress(BARS_START_PERCENT);
@@ -321,20 +324,22 @@ function startNotifications(ms) {
     notificationsInterval = setInterval(() => {
         addNotification(NOTE_CONTAINER_SELECTOR);
         if (currentNoteMS >= MIN_NOTE_MS) {
-            currentNoteMS -= 25
+            currentNoteMS -= 15
             startNotifications(currentNoteMS)
         }
     }, ms);
 }
 
-function animateGameBars(percent) {
+
+function resetBarsWithAnimation(percent) {
     words.forEach(word => {
+        bars[word].max = BARS_START_PERCENT;
         bars[word].isStarting = true;
         bars[word].percent = percent;
     })
 }
 function getRandPicPath() {
-    const prefix = rand(0, 10) > 3 ? 'Good' : 'Bad'
+    const prefix = rand(0, 10) > 0 ? 'Good' : 'Bad'
     const randPicNum = rand(1, words.length);
     const word = words[rand(0, words.length)]
     const path = `assets/notifications/${word}/${word}${prefix}${randPicNum}.svg`

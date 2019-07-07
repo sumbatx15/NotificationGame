@@ -1,7 +1,7 @@
-function initFrameProcess() {
-    var outputCanvas = document.getElementById('output'),
+function initFrameProcess(outputSelector, bufferSelector) {
+    var outputCanvas = document.querySelector(outputSelector),
         output = outputCanvas.getContext('2d'),
-        bufferCanvas = document.getElementById('buffer'),
+        bufferCanvas = document.querySelector(bufferSelector),
         buffer = bufferCanvas.getContext('2d'),
         video = null,
         width = outputCanvas.width,
