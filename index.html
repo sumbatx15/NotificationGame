@@ -14,9 +14,10 @@
 
 <body>
     <div id="feedback-container"></div>
-
-    <video class="intro" src="assets/screens/intro.mp4" playsinline autoplay muted loop></video>
-    <video class="tutorial" src="assets/screens/tutorial.mp4"></video>
+    <div class="intro-container">
+        <video class="intro" src="assets/screens/intro.mp4" playsinline autoplay muted loop></video>
+        <video class="tutorial" src="assets/screens/tutorial.mp4"></video>
+    </div>
     <div class="endgame-container">
         <div class="win">
             <video src="assets/screens/win.mp4"></video>
@@ -63,6 +64,7 @@
             <img class="word-stroked" src="assets/stroked/energyBar.svg" alt="">
         </div>
     </div>
+    <script src="config.js"></script>
     <script src="assets/sounds/index.js"></script>
     <script src="main.js"></script>
 </body>

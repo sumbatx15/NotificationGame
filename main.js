@@ -31,23 +31,13 @@ interact('.draggable')
         }
     });
 
-const ANIMATION_MS = 500;
+const BAR_ANIMATION_SPEED = 500;
 const LOSE_ANIMATION_MS = 200;
 const FEEDBACK_CONTAINER = '#feedback-container'
 const NOTE_CONTAINER_SELECTOR = '.notification-container'
 const START_CONTAINER_SELECTOR = '.start-game-container'
-const BARS_START_TRANSITION = `width ${ANIMATION_MS}ms cubic-bezier(0.61,0.17,0.52,1.22)`
+const BARS_START_TRANSITION = `width ${BAR_ANIMATION_SPEED}ms cubic-bezier(0.61,0.17,0.52,1.22)`
 const LOSE_TRANSITION = `width ${LOSE_ANIMATION_MS}ms`
-const BARS_START_PERCENT = 12;
-
-const CORRECT_ANSWER_PT = 10;
-const WRONG_ASNWER_PT = -5
-const LOSE_PROGRESS_PT = 0.025
-
-const MAX_NOTE_MS = 1000;
-const MIN_NOTE_MS = 600;
-const LOSE_PROGRESS_MS = 50;
-const TIME_MS = 100;
 
 const words = ['growth', 'esteem', 'belong', 'safety', 'energy']
 const notifications = [];
@@ -60,7 +50,7 @@ let isGameEnded = true;
 let timeInterval = 0
 let loseProgressInterval = 0;
 let notificationsInterval = 0;
-let currentNoteMS = MAX_NOTE_MS;
+let currentNoteMS = START_NOTE_SPANW_SPEED_MS;
 
 window.onload = () => {
     const intro = document.querySelector('.intro');
@@ -82,7 +72,7 @@ window.onload = () => {
         tutorial.play();
         tutorialTimeout = setTimeout(() => {
             stopTutorial(tutorial)
-        }, 20000);
+        }, TUTORIAL_LENGHT_MS);
     })
 
     tutorial.addEventListener('click', () => {
@@ -93,11 +83,12 @@ window.onload = () => {
     elEndGame.hide();
 }
 function stopTutorial(tutorial) {
-    tutorial.pause();
-    tutorial.style.height = 0;
-    tutorial.style.width = 0;
-    tutorial.style.borderRadius = '1000px';
+    tutorial.parentElement.style.height = 0;
+    tutorial.parentElement.style.width = 0;
+    tutorial.parentElement.style.borderRadius = '1000px';
+    tutorial.parentElement.style.pointerEvents = 'none'
     tutorial.style.pointerEvents = 'none'
+    tutorial.pause();
     setTimeout(() => {
         tutorial.style.display = 'none'
     }, 1000);
@@ -107,11 +98,12 @@ function stopTutorial(tutorial) {
 function getFeedbackVideos(word) {
     const videos = []
     for (let i = 1; i < 4; i++) {
-        const video = {
+        const audio = new Audio(`assets/feedback/sounds/${word}_${i}.mp3`)
+        audio.volume = FEEDBACK_VOLUME;
+        videos.push({
             gifSrc: `assets/feedback/gifs/${word}_${i}.gif`,
-            audio: new Audio(`assets/feedback/sounds/${word}_${i}.mp3`),
-        }
-        videos.push(video)
+            audio: audio,
+        })
     }
     return videos
 }
@@ -192,19 +184,20 @@ function mouseUp({ target }) {
         if (isCollecting && quality == 'Good') {
             bars[word].notification = item;
             bars[word].percent += CORRECT_ANSWER_PT
-            sounds.barUpAudio.cloneNode().play()
+            playSound('barUpAudio', BAR_VOLUME)
         }
         else if (isCollecting && quality == 'Bad') {
             bars[word].percent += WRONG_ASNWER_PT
-            sounds.barDownAudio.cloneNode().play()
+            playSound('barDownAudio', BAR_VOLUME)
+
         }
         else if (!isCollecting && quality == 'Bad') {
             bars[word].notification = item;
-            bars[word].percent += 2
-            sounds.trashAudio.cloneNode().play()
+            bars[word].percent += CORRECT_TRASH_ANSWER_PT
+            playSound('trashAudio', NOTIFICATION_VOLUME)
         }
         else if (!isCollecting) {
-            sounds.trashAudio.cloneNode().play()
+            playSound('trashAudio', NOTIFICATION_VOLUME)
         }
 
         item.el.style.opacity = 0;
@@ -213,8 +206,6 @@ function mouseUp({ target }) {
             endGame(true)
         }
     }
-
-
 }
 
 function collectAllNotes() {
@@ -265,7 +256,7 @@ function getTextBars() {
                 this._isStarting = val
                 setInterval(() => {
                     this._isStarting = false
-                }, ANIMATION_MS);
+                }, BAR_ANIMATION_SPEED);
             },
             get isStarting() {
                 return this._isStarting
@@ -285,7 +276,7 @@ function getTextBars() {
 
             calcMax() {
 
-                if (this.percent != 100 && this.percent > this.max + 25) {
+                if (this.percent != 100 && this.percent > this.max + FEEDBACK_PER_PERCENT) {
                     const { x, y } = this.notification.startingPosition
                     this.max = this.percent;
                     feedbacks[word].play({ x, y });
@@ -296,7 +287,7 @@ function getTextBars() {
                 this.el.style.transition = BARS_START_TRANSITION;
                 setTimeout(() => {
                     this.isGainingPoints = false
-                }, ANIMATION_MS);
+                }, BAR_ANIMATION_SPEED);
             }
         }
         return bars;
@@ -328,7 +319,7 @@ function getElEndGame() {
             this.el.children[2] = ''
             setTimeout(() => {
                 addNotification('.endgame-notes', true)
-            }, 1500);
+            }, LOSE_WIN_NOTIFICATION_DELAY);
         }
     }
 }
@@ -347,15 +338,15 @@ function restartGame() {
     }, 0);
     setTimeout(() => {
         resetBarsWithAnimation(BARS_START_PERCENT, BARS_START_PERCENT);
-    }, ANIMATION_MS);
+    }, BAR_ANIMATION_SPEED);
 
     setTimeout(() => {
         startLoseProgress(BARS_START_PERCENT);
-    }, ANIMATION_MS * 2);
+    }, BAR_ANIMATION_SPEED * 2);
 
     timer.percent = 100;
 
-    currentNoteMS = MAX_NOTE_MS;
+    currentNoteMS = START_NOTE_SPANW_SPEED_MS;
     startNotifications(currentNoteMS);
 }
 
@@ -382,17 +373,17 @@ function getElTime() {
 function startLoseProgress() {
     loseProgressInterval = setInterval(() => {
         words.forEach(word => {
-            bars[word].percent -= LOSE_PROGRESS_PT
+            bars[word].percent -= BAR_LOSING_PT
         })
-    }, LOSE_PROGRESS_MS);
+    }, BAR_LOSING_SPEED_MS);
 }
 
 function startNotifications(ms) {
     clearInterval(notificationsInterval);
     notificationsInterval = setInterval(() => {
         addNotification(NOTE_CONTAINER_SELECTOR);
-        if (currentNoteMS >= MIN_NOTE_MS) {
-            currentNoteMS -= 15
+        if (currentNoteMS >= END_NOTE_SPANW_SPEED_MS) {
+            currentNoteMS -= NOTE_SPAWN_ACCELERATOR
             startNotifications(currentNoteMS)
         }
     }, ms);
@@ -407,7 +398,7 @@ function resetBarsWithAnimation(percent, max) {
     })
 }
 function getRandPicPath() {
-    const prefix = rand(0, 10) >= 4 ? 'Good' : 'Bad'
+    const prefix = rand(0, 100) <= GOOD_NOTIFICATION_PERCENT ? 'Good' : 'Bad'
     const randPicNum = rand(1, words.length);
     // const word = 'esteem'
     const word = words[rand(0, words.length)]
@@ -436,7 +427,13 @@ function addNotification(selector, isResetBtn) {
 
     notifications.push(item)
     document.querySelector(selector).appendChild(el)
-    sounds[`${word}Audio`].cloneNode().play();
+    playSound(`${word}Audio`, NOTIFICATION_VOLUME)
+}
+
+function playSound(propName, volume) {
+    const sound = sounds[propName].cloneNode()
+    sound.volume = volume
+    sound.play();
 }
 
 function clearNoteContaier() {

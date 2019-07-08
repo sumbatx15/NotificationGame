@@ -8,3 +8,4 @@ const sounds = {
   safetyAudio: new Audio('assets/sounds/safety.mp3'),
   trashAudio: new Audio('assets/sounds/trashSound.mp3')
 }
+
