@@ -20,22 +20,20 @@ function dragMoveListener(event) {
     target.setAttribute('data-y', y);
 }
 
-interact('.draggable')
-    .draggable({
-        inertia: true,
-        autoScroll: true,
-        onmove: dragMoveListener,
-        onend: function (event) {
-            const { target } = event
-            target.parentNode.removeChild(target)
-        }
-    });
+interact('.draggable').draggable({
+    inertia: true,
+    autoScroll: true,
+    onmove: dragMoveListener,
+    onend: function (event) {
+        const { target } = event
+        target.parentNode.removeChild(target)
+    }
+});
 
 const BAR_ANIMATION_SPEED = 500;
 const LOSE_ANIMATION_MS = 200;
 const FEEDBACK_CONTAINER = '#feedback-container'
 const NOTE_CONTAINER_SELECTOR = '.notification-container'
-const START_CONTAINER_SELECTOR = '.start-game-container'
 const BARS_START_TRANSITION = `width ${BAR_ANIMATION_SPEED}ms cubic-bezier(0.61,0.17,0.52,1.22)`
 const LOSE_TRANSITION = `width ${LOSE_ANIMATION_MS}ms`
 
@@ -45,6 +43,7 @@ const bars = getTextBars();
 const timer = getElTime();
 const elEndGame = getElEndGame();
 const feedbacks = getFeedbacks();
+const intro = getIntro(() => restartGame());
 
 let isGameEnded = true;
 let timeInterval = 0
@@ -53,46 +52,86 @@ let notificationsInterval = 0;
 let currentNoteMS = START_NOTE_SPANW_SPEED_MS;
 
 window.onload = () => {
-    const intro = document.querySelector('.intro');
-    const tutorial = document.querySelector('.tutorial');
-    let tutorialTimeout = 0;
-
-    intro.src = 'assets/screens/intro.mp4'
-    intro.addEventListener('loadeddata', function () {
-    })
-
-    intro.addEventListener('click', () => {
-        intro.pause()
-        intro.style.opacity = 0
-        intro.style.pointerEvents = 'none'
-        setTimeout(() => {
-            intro.style.display = 'none'
-        }, 200);
-
-        tutorial.play();
-        tutorialTimeout = setTimeout(() => {
-            stopTutorial(tutorial)
-        }, TUTORIAL_LENGHT_MS);
-    })
-
-    tutorial.addEventListener('click', () => {
-        clearTimeout(tutorialTimeout)
-        stopTutorial(tutorial)
-    })
-
     elEndGame.hide();
 }
-function stopTutorial(tutorial) {
-    tutorial.parentElement.style.height = 0;
-    tutorial.parentElement.style.width = 0;
-    tutorial.parentElement.style.borderRadius = '1000px';
-    tutorial.parentElement.style.pointerEvents = 'none'
-    tutorial.style.pointerEvents = 'none'
-    tutorial.pause();
-    setTimeout(() => {
-        tutorial.style.display = 'none'
-    }, 1000);
-    restartGame();
+
+
+function getIntro(onEnd) {
+    const intro = {
+        introContainer: document.querySelector('.intro-container'),
+        introVideo: document.querySelector('.intro'),
+        tutorialVideo: document.querySelector('.tutorial'),
+        tutorialTimeout: 0,
+        returnToIntroTimeout: 0,
+        transitionTimeout: 0,
+        introTransitionMS: 1500,
+        introClick() {
+            console.log('this.introVideo:', this)
+            this.introVideo.pause()
+            this.introVideo.style.opacity = 0
+            this.introVideo.style.pointerEvents = 'none'
+            setTimeout(() => {
+                this.introVideo.style.display = 'none'
+            }, 200);
+
+            this.tutorialVideo.play();
+            this.tutorialTimeout = setTimeout(() => {
+                this.stopTutorial()
+            }, TUTORIAL_LENGHT_MS);
+        },
+        stopTutorial() {
+            clearTimeout(this.tutorialTimeout)
+            this.animateIntroInOut()
+            this.tutorialVideo.style.pointerEvents = 'none'
+            this.tutorialVideo.pause();
+
+            setTimeout(() => {
+                this.tutorialVideo.style.display = 'none'
+                onEnd();
+            }, 1000);
+        },
+        animateIntroInOut() {
+            clearTimeout(this.transitionTimeout)
+            this.introContainer.style.transition = `all ${this.introTransitionMS}ms ease-in-out`
+            this.introContainer.style.transform = 'translate(0,-100%)';
+            this.introContainer.style.opacity = 0;
+            this.introContainer.style.filter = `blur(${INTRO_BLUR}px)`;
+            // this.introContainer.style.height = 0;
+            // this.introContainer.style.width = 0;
+            // this.introContainer.style.borderRadius = '1000px';
+            this.introContainer.style.pointerEvents = 'none'
+        },
+        startReturnToIntro(onEnd) {
+            this.returnToIntroTimeout = setTimeout(() => {
+                this.resetIntro()
+                setTimeout(() => {
+                    onEnd()
+                }, this.introTransitionMS);
+            }, RETURN_TO_INTRO_SECONDS * 1000);
+        },
+        stopReturnToIntro() {
+            clearTimeout(this.returnToIntroTimeout);
+        },
+        resetIntro() {
+            this.introContainer.setAttribute('style', '')
+            this.introVideo.setAttribute('style', '')
+            this.tutorialVideo.setAttribute('style', '')
+            this.introContainer.style.transition = `all ${this.introTransitionMS}ms ease-in-out`
+            this.transitionTimeout = setTimeout(() => {
+                this.introContainer.style.transition = ''
+            }, this.introTransitionMS);
+            this.introVideo.currentTime = 0
+            this.introVideo.play()
+            this.tutorialVideo.currentTime = 0
+            this.tutorialVideo.pause()
+        }
+    }
+
+    console.log('intro.introVideo:', intro.introVideo)
+    intro.introVideo.addEventListener('click', () => intro.introClick())
+    intro.tutorialVideo.addEventListener('click', () => intro.stopTutorial())
+
+    return intro
 }
 
 function getFeedbackVideos(word) {
@@ -122,6 +161,13 @@ function createFeedbackElement(path, { x, y }, onload, ) {
     return img
 }
 
+function resetVidIndexes(){
+    words.forEach(word => {
+        feedbacks[word].vidIndex = 0
+        console.log('feedbacks[word].vidIndex:', feedbacks[word].vidIndex)
+    })
+}
+
 function getFeedbacks() {
     return words.reduce((feedbacks, word) => {
         feedbacks[word] = {
@@ -129,8 +175,9 @@ function getFeedbacks() {
             elContainer: document.querySelector(FEEDBACK_CONTAINER),
             selectedVideo: null,
             isPlaying: false,
+            vidIndex: 0,
             randVideo() {
-                return this.videos[rand(0, 3)]// 
+                return this.videos[++this.vidIndex % 3]
             },
             show(show = true) {
                 this.canvas.style.width = show ? '900px' : '0px'
@@ -173,6 +220,7 @@ function mouseUp({ target }) {
         target.style.opacity = 0;
         target.style.pointerEvents = 'none';
         sounds.trashAudio.cloneNode().play()
+        intro.stopReturnToIntro();
         setTimeout(() => {
             restartGame();
         }, 500);
@@ -233,11 +281,13 @@ function endGame(isWon) {
         resetBarsWithAnimation(100, 100)
         setTimeout(() => {
             elEndGame.show(isWon)
+            clearNoteContaier();
         }, 1000);
     } else {
         elEndGame.show()
         setTimeout(() => {
             resetBarsWithAnimation(100, 100)
+            clearNoteContaier();
         }, 500);
     }
 
@@ -295,9 +345,14 @@ function getTextBars() {
 }
 
 function getElEndGame() {
+    const el = document.querySelector('.endgame-container')
+    el.children[0].children[0].volume = LOSE_WIN_VOLUME
+    el.children[1].children[0].volume = LOSE_WIN_VOLUME
     return {
-        el: document.querySelector('.endgame-container'),
+        el,
+        addNoteTimeout: 0,
         show(isWon) {
+            intro.startReturnToIntro(() => this.hide());
             let toShow = isWon ? 0 : 1;
             let notShow = isWon ? 1 : 0;
             this.el.children[toShow].children[0].currentTime = 0
@@ -310,16 +365,16 @@ function getElEndGame() {
             this.renderInnerHTML();
         },
         hide() {
-            console.log('hide:')
-            this.el.children[2] = ''
+            clearTimeout(this.addNoteTimeout)
+            this.el.children[2].innerHTML = ''
             this.el.style.opacity = 0
             this.el.style.pointerEvents = 'none'
         },
         renderInnerHTML() {
-            this.el.children[2] = ''
-            setTimeout(() => {
-                addNotification('.endgame-notes', true)
-            }, LOSE_WIN_NOTIFICATION_DELAY);
+            this.el.children[2].innerHTML = ''
+            this.addNoteTimeout = setTimeout(() => {
+                addNotification('.endgame-notes', { isResetBtn: true })
+            }, LOSE_WIN_NOTIFICATION_DELAY_MS);
         }
     }
 }
@@ -331,6 +386,7 @@ function restartGame() {
     isGameEnded = false;
     elEndGame.hide();
 
+    resetVidIndexes();
     clearFeedbackContainer();
     clearNoteContaier();
     setTimeout(() => {
@@ -397,16 +453,35 @@ function resetBarsWithAnimation(percent, max) {
         bars[word].percent = percent;
     })
 }
+
+var prevPath = ''
+
+function testRandPic() {
+    for (let i = 0; i < 1000; i++) {
+        getRandPicPath()
+    }
+}
+
 function getRandPicPath() {
-    const prefix = rand(0, 100) <= GOOD_NOTIFICATION_PERCENT ? 'Good' : 'Bad'
-    const randPicNum = rand(1, words.length);
-    // const word = 'esteem'
-    const word = words[rand(0, words.length)]
-    const path = `assets/notifications/${word}/${word}${prefix}${randPicNum}.svg`
+    let prefix = rand(0, 100) <= GOOD_NOTIFICATION_PERCENT ? 'Good' : 'Bad'
+    let word = words[rand(0, words.length)]
+    let randPicNum = rand(1, words.length);
+    let path = `assets/notifications/${word}/${word}${prefix}${randPicNum}.svg`
+
+    while (path == prevPath) {
+        console.log('Duplication, choosing somthing else')
+        console.log(prevPath, path)
+        word = words[rand(0, words.length)]
+        randPicNum = rand(1, words.length)
+        prefix = rand(0, 100) <= GOOD_NOTIFICATION_PERCENT ? 'Good' : 'Bad'
+        path = `assets/notifications/${word}/${word}${prefix}${randPicNum}.svg`
+    }
+    prevPath = path;
+
     return { path, word, prefix }
 }
 
-function addNotification(selector, isResetBtn) {
+function addNotification(selector, { isResetBtn } = {}) {
     const { path, word, prefix } = getRandPicPath();
     const [x, y] = [rand(100, 1500), rand(100, 700)]
 
