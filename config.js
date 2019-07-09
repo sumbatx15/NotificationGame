@@ -1,7 +1,7 @@
 
 // Max volume is 1, mute is 0
 const INTRO_BLUR = 100;
-const RETURN_TO_INTRO_SECONDS = 4
+const RETURN_TO_INTRO_SECONDS = 20
 const LOSE_WIN_NOTIFICATION_DELAY_MS = 3500
 
 // VOLUME
