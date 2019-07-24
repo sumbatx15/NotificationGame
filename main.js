@@ -63,6 +63,7 @@ let notificationsInterval = 0;
 let currentNoteMS = START_NOTE_SPANW_SPEED_MS;
 
 window.onload = () => {
+    document.addEventListener('contextmenu', event => event.preventDefault());
     elEndGame.hide();
 }
 
