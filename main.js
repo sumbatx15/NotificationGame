@@ -1,4 +1,14 @@
 // target elements with the "draggable" class
+HTMLElement.prototype.show = function (shouldShow = true, styles) {
+    this.style.transition = 'opacity 300ms'
+    this.style.pointerEvents = shouldShow ? 'all' : 'none'
+    this.style.opacity = shouldShow ? 1 : 0
+    for (const key in styles) {
+        console.log('styles:', styles)
+        this.style[key] = styles[key]
+    }
+}
+
 const rand = (num1, num2) => {
     return Math.floor(Math.random() * num2) + num1
 }
@@ -43,6 +53,7 @@ const bars = getTextBars();
 const timer = getElTime();
 const elEndGame = getElEndGame();
 const feedbacks = getFeedbacks();
+const feedbackContainer = document.querySelector(FEEDBACK_CONTAINER)
 const intro = getIntro(() => restartGame());
 
 let isGameEnded = true;
@@ -52,6 +63,7 @@ let notificationsInterval = 0;
 let currentNoteMS = START_NOTE_SPANW_SPEED_MS;
 
 window.onload = () => {
+    document.addEventListener('contextmenu', event => event.preventDefault());
     elEndGame.hide();
 }
 
@@ -127,7 +139,6 @@ function getIntro(onEnd) {
         }
     }
 
-    console.log('intro.introVideo:', intro.introVideo)
     intro.introVideo.addEventListener('click', () => intro.introClick())
     intro.tutorialVideo.addEventListener('click', () => intro.stopTutorial())
 
@@ -148,10 +159,15 @@ function getFeedbackVideos(word) {
 }
 
 
-function createFeedbackElement(path, { x, y }, onload, ) {
+function createFeedbackElement(path, { x, y }, onload) {
     const img = document.createElement('img')
+    const radius = 325;
+
+    y = y < radius ? radius : y + radius > window.innerHeight ? window.innerHeight - radius : y;
+    x = x < radius ? radius : x + radius > window.innerWidth ? window.innerWidth - radius : x;
+
     img.className = 'feedback';
-    img.setAttribute('width', '450px')
+    img.setAttribute('width', `${radius * 2}px`)
     img.style.top = y + 'px';
     img.style.left = x + 'px';
     img.style.transform = 'translate(-50%,-50%)';
@@ -161,7 +177,7 @@ function createFeedbackElement(path, { x, y }, onload, ) {
     return img
 }
 
-function resetVidIndexes(){
+function resetVidIndexes() {
     words.forEach(word => {
         feedbacks[word].vidIndex = 0
         console.log('feedbacks[word].vidIndex:', feedbacks[word].vidIndex)
@@ -179,15 +195,16 @@ function getFeedbacks() {
             randVideo() {
                 return this.videos[++this.vidIndex % 3]
             },
-            show(show = true) {
-                this.canvas.style.width = show ? '900px' : '0px'
-            },
             play({ x, y }) {
+                this.elContainer.show();
+                pauseGame();
                 this.selectedVideo = this.randVideo();
                 const video = this.selectedVideo
                 const gif = createFeedbackElement(video.gifSrc, { x, y }, () => {
                     video.audio.onended = () => {
+                        resumeGame();
                         this.elContainer.removeChild(gif)
+                        this.elContainer.show(false);
                         this.isPlaying = false;
                     }
                     this.isPlaying = true;
@@ -196,10 +213,6 @@ function getFeedbacks() {
                 this.elContainer.appendChild(gif)
             },
         }
-        feedbacks[word].videos.forEach(v => {
-
-        })
-
         return feedbacks
     }, {})
 }
@@ -268,6 +281,16 @@ function collectAllNotes() {
     return children.length
 }
 
+function pauseGame() {
+    clearInterval(timeInterval);
+    clearInterval(loseProgressInterval);
+    clearInterval(notificationsInterval);
+}
+
+function resumeGame() {
+    startLoseProgress()
+    startNotifications(currentNoteMS)
+}
 
 function endGame(isWon) {
     if (isGameEnded) return
@@ -325,7 +348,6 @@ function getTextBars() {
             },
 
             calcMax() {
-
                 if (this.percent != 100 && this.percent > this.max + FEEDBACK_PER_PERCENT) {
                     const { x, y } = this.notification.startingPosition
                     this.max = this.percent;
@@ -385,6 +407,7 @@ function clearFeedbackContainer() {
 function restartGame() {
     isGameEnded = false;
     elEndGame.hide();
+    feedbackContainer.show(false)
 
     resetVidIndexes();
     clearFeedbackContainer();
@@ -483,6 +506,7 @@ function getRandPicPath() {
 
 function addNotification(selector, { isResetBtn } = {}) {
     const { path, word, prefix } = getRandPicPath();
+    // const [x, y] = [rand(1200, 1300), rand(100, 700)]
     const [x, y] = [rand(100, 1500), rand(100, 700)]
 
     const el = document.createElement('div')
